@@ -1,0 +1,35 @@
+[workspace]
+resolver = "2"
+members = [
+    "pkg-lib",
+    "pkg-cli",
+    "termion-stub",
+    "pkgar-stub",
+    "pkgar-core-stub",
+    "pkgar-keys-stub",
+]
+default-members = [
+    "pkg-cli",
+]
+
+[workspace.package]
+version = "0.2.9"
+description = "Redox Packaging Utilities"
+license = "MIT"
+authors = ["Jeremy Soller <jackpot51@gmail.com>"]
+repository = "https://gitlab.redox-os.org/redox-os/pkgutils"
+edition = "2021"
+
+[patch.crates-io]
+# Patch termion to stub implementation for Windows
+termion = { path = "termion-stub" }
+# Disable Unix-only pkgars
+pkgar = { path = "pkgar-stub" }
+pkgar-core = { path = "pkgar-core-stub" }
+pkgar-keys = { path = "pkgar-keys-stub" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

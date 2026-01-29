@@ -1,0 +1,6 @@
+[package]
+name = "termion"
+version = "4.0.6"
+edition = "2015"
+
+[lib]

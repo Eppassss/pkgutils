@@ -1,0 +1,40 @@
+[package]
+name = "redox-pkg"
+description = "redox package manager library"
+
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "pkg"
+doctest = false
+
+[[test]]
+name = "integration_test"
+path = "tests/integration_test.rs"
+required-features = ["library"]
+
+[dependencies]
+anyhow = "1"
+walkdir = "2"
+indicatif = { version = "0.17", optional = true }
+pkgar = { version = "0.1", optional = true }
+pkgar-core = { version = "0.1", optional = true }
+pkgar-keys = { version = "0.1", optional = true }
+serde = "1"
+serde_derive = "1"
+thiserror = "1"
+toml = "0.8.2"
+
+[features]
+default = ["library"]
+indicatif = ["dep:indicatif", "library"]
+library = ["pkgar", "pkgar-core", "reqwest"]
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["blocking"]
+optional = true

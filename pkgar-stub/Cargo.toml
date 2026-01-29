@@ -1,0 +1,6 @@
+[package]
+name = "pkgar"
+version = "0.1.19"
+edition = "2021"
+
+[lib]

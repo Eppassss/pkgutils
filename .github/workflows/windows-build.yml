@@ -1,10 +1,10 @@
-name: Windows Build
+name: Multi-Platform Build
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, develop ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,47 +20,34 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     
-    - name: Install Perl (Strawberry)
-      run: |
-        # Download Strawberry Perl
-        $url = "https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit-portable.zip"
-        $output = "$env:TEMP\perl.zip"
-        Invoke-WebRequest -Uri $url -OutFile $output
-        Expand-Archive -Path $output -DestinationPath "$env:TEMP"
-        echo "PERL_EXECUTABLE=$env:TEMP\perl\perl\bin\perl.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        echo "$env:TEMP\perl\perl\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      shell: powershell
+    - name: Install Perl via Chocolatey
+      run: choco install strawberryperl -y --no-progress
+      shell: cmd
     
-    - name: Install NASM
-      run: |
-        # Download NASM
-        $url = "https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/win64/nasm-2.15.05-win64.zip"
-        $output = "$env:TEMP\nasm.zip"
-        Invoke-WebRequest -Uri $url -OutFile $output
-        Expand-Archive -Path $output -DestinationPath "$env:TEMP"
-        echo "$env:TEMP\nasm-2.15.05" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      shell: powershell
+    - name: Install NASM via Chocolatey
+      run: choco install nasm -y --no-progress
+      shell: cmd
     
     - name: Cache cargo registry
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cargo/registry
         key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-registry-
     
     - name: Cache cargo index
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cargo/git
         key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-git-
     
     - name: Cache cargo build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: target
-        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: ${{ runner.os }}-cargo-build-target-
+        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-build-
     
     - name: Build
       run: cargo build --release --verbose
@@ -69,18 +56,23 @@ jobs:
       run: cargo test --release --lib --verbose
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
         name: pkg-windows
         path: target/release/pkg.exe
         retention-days: 30
 
   build-unix:
-    name: Build on Linux/macOS
+    name: Build on ${{ matrix.os-name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            os-name: Linux
+          - os: macos-latest
+            os-name: macOS
     
     steps:
     - uses: actions/checkout@v4
@@ -89,13 +81,13 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     
     - name: Cache cargo
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cargo
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     
     - name: Cache build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: target
         key: ${{ runner.os }}-build-${{ hashFiles('**/Cargo.lock') }}
@@ -107,8 +99,9 @@ jobs:
       run: cargo test --release --verbose
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        name: pkg-${{ runner.os }}
-        path: target/release/pkg${{ runner.os == 'Windows' && '.exe' || '' }}
+        name: pkg-${{ matrix.os-name }}
+        path: target/release/pkg${{ matrix.os == 'windows-latest' && '.exe' || '' }}
         retention-days: 30
